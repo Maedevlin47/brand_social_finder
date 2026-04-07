@@ -1,12 +1,71 @@
-Find the official Instagram and X (Twitter) handles for a brand using web search, then return a single result row with a confidence score.
+Find the official Instagram and X (Twitter) handles for a brand using web search. Supports two modes:
 
-## Input
+- **CSV batch mode** (primary): `$ARGUMENTS` ends in `.csv` — process every brand in the file
+- **Single-brand mode** (secondary): `$ARGUMENTS` is a brand name — look up one brand interactively
 
-The brand name is provided as the argument to this command: $ARGUMENTS
+---
 
-If no brand name is given, ask the user to provide one before proceeding.
+## Mode 1: CSV Batch Mode
 
-## Steps
+Triggered when `$ARGUMENTS` ends in `.csv`.
+
+### Setup (do once before the loop)
+
+1. Read the input CSV. The required column is `brand_name`. Any additional columns (`source_name`, `country`, etc.) are carried through to output unchanged. Count the total rows for progress logging.
+2. Check whether `results.csv` exists. If it does not, create it with this header row:
+   `brand_name,instagram_handle,x_handle,confidence_score,manual_review_needed,confidence_signals,notes`
+3. If `results.csv` exists, read all `brand_name` values already present — these are **already-processed brands** and must be skipped.
+
+### Processing loop
+
+Repeat for each row in the input CSV, top to bottom. Skip any row whose `brand_name` is already in `results.csv`.
+
+**Step 1 — Log progress**
+Print:
+```
+Processing <N>/<total>: <brand_name>…
+```
+
+**Steps 2–7 — Research the brand**
+Follow the 6-step research flow described in Mode 2 below, substituting the current row's `brand_name` for `$ARGUMENTS`.
+
+**Step 8 — Build the result row**
+
+| Field | Value |
+|---|---|
+| `brand_name` | From input row |
+| `instagram_handle` | Handle without `@`, or `-` if not found |
+| `x_handle` | Handle without `@`, or `-` if not found |
+| `confidence_score` | Integer 0–100 |
+| `manual_review_needed` | `TRUE` if confidence < 50, no handle found for either platform, or meaningful ambiguity remains; otherwise `FALSE` |
+| `confidence_signals` | Signals joined with `; ` (e.g. `verified_badge; handle_matches_brand`) |
+| `notes` | Where each handle was found, then any caveats. One or two sentences. |
+
+Escape any commas or double-quotes per RFC 4180 (wrap field in double-quotes; escape internal double-quotes as `""`).
+
+**Step 9 — Append to results.csv**
+Append the result row as a new line. Do not rewrite the whole file.
+
+**Step 10 — Log completion**
+Print:
+```
+✓ <N>/<total>: <brand_name> — instagram: <handle or "-">, x: <handle or "-">, confidence: <score>, review: <TRUE/FALSE>
+```
+
+### After the loop
+
+Print:
+```
+Done. <total_processed> brand(s) processed, <total_skipped> skipped (already in results.csv). Results written to results.csv.
+```
+
+---
+
+## Mode 2: Single-Brand Mode
+
+Triggered when `$ARGUMENTS` does not end in `.csv`.
+
+If no argument is given, ask the user to provide a brand name before proceeding.
 
 Work through these steps in order. Use web search for each one.
 
@@ -49,17 +108,25 @@ Deductions (subtract points):
 - −10 — follower count could not be verified
 - −5 — selected account is a regional variant and a global account also exists
 
-**Step 6 — Write the notes field**
+**Step 6 — Determine manual_review_needed**
+Set to `TRUE` if any of the following apply:
+- Confidence score is below 50
+- No handle was found for either platform (`-` in both fields)
+- Meaningful ambiguity remains (e.g. multiple plausible accounts with similar follower counts)
+
+Otherwise set to `FALSE`.
+
+**Step 7 — Write the notes field**
 Begin with exactly where each handle was found (e.g. "Instagram handle found in website footer. X handle found via web search."). Then add any caveats, ambiguities, or flags worth reviewing. Keep to one or two sentences.
 
-## Output
+### Output
 
-Return exactly one result in this format — a plain text block followed by a markdown table:
+Return exactly one result as a markdown table:
 
 ```
-brand_name        | instagram_handle | x_handle | confidence_score | notes
-------------------|------------------|----------|------------------|------
-$ARGUMENTS        | <handle or ->    | <handle or -> | <0-100>     | <notes>
+brand_name  | instagram_handle | x_handle     | confidence_score | manual_review_needed | notes
+------------|------------------|--------------|------------------|----------------------|------
+$ARGUMENTS  | <handle or ->    | <handle or-> | <0-100>          | TRUE/FALSE           | <notes>
 ```
 
 Rules:
