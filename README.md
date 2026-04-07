@@ -1,82 +1,36 @@
-# Source ID Finder
+# Brand Handle Finder
 
-A Python tool that uses Claude (with web search) to find official Instagram and Twitter/X handles for brands. Available as both a **web UI** and a **command-line tool**.
+A Claude Code-native tool that finds and verifies the official Instagram and X (Twitter) handles for a list of brands. Research is performed entirely through Claude Code's built-in web search — no API key or external services required.
 
-## Setup
+## Requirements
 
-**1. Clone the repository.**
-
-**2. Install dependencies** (Python 3.10+ required):
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed and authenticated
+- Python 3.10+ (for the CSV utility helpers in `main.py` and `formatter.py`)
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**3. Add your API key:**
+---
 
-```bash
-cp .env.example .env
-# Then edit .env and replace `your_key_here` with your real Anthropic API key.
-```
+## How it works
 
-You can get an API key at <https://console.anthropic.com/>.
+All brand research is done by two Claude Code slash commands:
+
+| Command | What it does |
+|---|---|
+| `/find-brand-handle <brand name>` | Looks up a single brand and returns one result row |
+| `/process-brands-csv` | Reads `to-process.csv`, processes every brand sequentially, writes results to `results.csv`, and removes each row from the input file as it goes |
+
+Claude Code uses web search to find each brand's official website, cross-reference Instagram and X handles across sources, and score confidence from 0–100 based on verification signals.
 
 ---
 
-## Web UI
+## Batch usage (recommended)
 
-The easiest way to use the tool. Run:
+**1. Prepare your input file.**
 
-```bash
-python app.py
-```
-
-Then open **http://127.0.0.1:5000** in your browser.
-
-The web UI has two tabs:
-
-### Search tab
-- **Single Brand Lookup** — enter a brand name, source list, and location, then click Search. Results appear in a table with a confidence score.
-- **Batch CSV Upload** — upload a CSV file to process multiple brands at once. Results stream in row by row as they complete. A Download CSV button appears when results are ready.
-
-### Confidence Calculator tab
-Explains how the confidence score is calculated and what each score range means, so you know whether to manually verify a result.
-
----
-
-## Command-line usage
-
-### Single-brand mode
-
-```bash
-python main.py --brand "Biti's" --source "Vietnamese Footwear Brands" --country "Vietnam"
-python main.py --brand "Nike" --source "Global Footwear" --country "USA"
-```
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--brand` | Yes | Brand name to look up |
-| `--source` | No | Name of the source list this brand comes from |
-| `--country` | Yes | Country or region the brand is from |
-
-### Batch mode
-
-```bash
-python main.py --file brands.csv --output results.csv
-```
-
-| Flag | Required | Default | Description |
-|------|----------|---------|-------------|
-| `--file` | Yes | — | Input CSV file |
-| `--output` | No | `results.csv` | Output CSV file |
-
-**Resumability:** if the output file already exists, any brand already in it will be skipped. Re-run the same command to continue after an interruption.
-
----
-
-## Input CSV format
-
-The input CSV must have these three columns (header row required):
+Create `to-process.csv` with a header row and one brand per line:
 
 ```csv
 Name,List,Location
@@ -85,49 +39,71 @@ Bata,Global Footwear,Czechia
 Muji,Japanese Retail Brands,Japan
 ```
 
-| Column | Description |
-|--------|-------------|
-| `Name` | The brand to look up |
-| `List` | Name of the list this brand was sourced from |
-| `Location` | Country or region the brand is from (indicates where the brand is from, not which regional account to prefer) |
+| Column | Required | Description |
+|---|---|---|
+| `Name` | Yes | Brand name to look up |
+| `List` / `Source` / `Source List` | No | Name of the source list this brand came from (header is case-insensitive) |
+| `Location` | Yes | Country or region the brand is from |
+
+**2. Run the batch command inside Claude Code:**
+
+```
+/process-brands-csv
+```
+
+Claude Code will log progress to the terminal as it runs:
+
+```
+Processing 1/3: Biti's (Vietnam)…
+✓ 1/3: Biti's — instagram: bitisshoes, x: -, confidence: 55
+Processing 2/3: Bata (Czechia)…
+✓ 2/3: Bata — instagram: bata, x: -, confidence: 45
+...
+Done. 3 brand(s) processed. Results written to results.csv.
+```
+
+**Resumability:** each brand is removed from `to-process.csv` immediately after its result is written to `results.csv`. If the run is interrupted, simply re-run `/process-brands-csv` to continue from where it left off.
 
 ---
 
-## Output CSV format
+## Single brand lookup
+
+To look up one brand interactively:
+
+```
+/find-brand-handle Nike
+/find-brand-handle "Biti's"
+```
+
+Returns a single result row with handles, confidence score, and notes.
+
+---
+
+## Output format
+
+Results are written to `results.csv` with these columns:
 
 | Column | Description |
-|--------|-------------|
+|---|---|
 | `brand_name` | Brand name (from input) |
 | `source_name` | Source list name (from input) |
 | `country` | Country/region (from input) |
-| `instagram_handle` | Best official Instagram handle without `@`, or empty |
-| `twitter_handle` | Best official Twitter/X handle without `@`, or empty |
-| `confidence` | Confidence score 0–100 |
-| `confidence_signals` | Semicolon-separated list of signals that contributed to the score |
-| `notes` | Anything worth flagging, including "MANUAL REVIEW NEEDED" if the tool could not confidently choose a handle |
+| `website` | Brand's official website URL |
+| `instagram_handle` | Official Instagram handle without `@`, or `-` if not found |
+| `x_handle` | Official X handle without `@`, or `-` if not found |
+| `manual_review` | `true` if the tool could not confidently determine a handle |
+| `confidence_score` | Integer 0–100 |
+| `confidence_signals` | Semicolon-separated signals that contributed to the score |
+| `notes` | Where each handle was found, plus any caveats |
 
 ---
-
-## How it works
-
-For each brand the tool:
-
-1. Searches for the brand's official website and checks it for linked Instagram and Twitter/X URLs.
-2. Selects the best handle using this priority order:
-   - **Website link first** — if a handle is linked directly from the brand's official website, that handle is used.
-   - **Highest follower count** — if multiple accounts exist and none is linked from the official website, the account with the most followers is selected, whether global or regional.
-   - **Other signals** — if follower counts are unavailable, verified badges, bio links, and cross-source confirmation are used to decide.
-   - **Manual review flag** — if the tool cannot confidently choose, it flags the result in the notes column.
-3. Prefers Instagram; only records a Twitter/X handle if no Instagram handle is found.
-4. Returns handles without `@` and leaves cells empty when a handle isn't found.
-5. Scores confidence from 0–100 based on how many verification signals were confirmed.
 
 ## Confidence score
 
 | Score | Meaning |
-|-------|---------|
-| 80–100 | High confidence — safe to use without manual review in most cases |
-| 60–79 | Moderate confidence — spot-check recommended |
-| 0–59 | Low confidence — manually verify before using |
+|---|---|
+| 80–100 | High confidence — safe to use without manual review |
+| 50–79 | Moderate confidence — spot-check recommended |
+| 0–49 | Low confidence — manually verify before using |
 
-See the **Confidence Calculator** tab in the web UI for a full breakdown of how points are added and subtracted.
+Points are added for signals like a verified badge (+30), handle linked from the official website (+25), confirmed across multiple sources (+20), name match (+15), and active account (+10). Deductions apply for ambiguity, unverifiable follower counts, and regional variants.

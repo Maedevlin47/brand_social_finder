@@ -1,8 +1,8 @@
 # Environment / secrets
 .env
 
-# Claude Code local settings
-.claude/
+# Claude Code local settings (settings.local.json contains machine-specific config)
+.claude/settings.local.json
 
 # Python
 __pycache__/

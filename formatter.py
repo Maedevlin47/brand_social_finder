@@ -13,7 +13,7 @@ COLUMNS = [
     ("Country", "yellow", 12),
     ("Website", "white", 28),
     ("Instagram", "green", 22),
-    ("Twitter/X", "blue", 20),
+    ("X Handle", "blue", 20),
     ("Review?", "red", 8),
     ("Confidence", "white", 10),
     ("Notes", "white", 36),
@@ -28,7 +28,7 @@ def _make_table(title: str = "") -> Table:
 
 
 def _row_values(row: dict) -> tuple:
-    confidence = row.get("confidence", "")
+    confidence = row.get("confidence_score", "")
     confidence_str = f"{confidence}/100" if confidence != "" else ""
     manual_review = row.get("manual_review", False)
     review_str = "Yes" if manual_review and str(manual_review).lower() not in ("false", "0", "") else ""
@@ -38,7 +38,7 @@ def _row_values(row: dict) -> tuple:
         row.get("country", ""),
         row.get("website", "") or "",
         row.get("instagram_handle", "") or "",
-        row.get("twitter_handle", "") or "",
+        row.get("x_handle", "") or "",
         review_str,
         confidence_str,
         row.get("notes", "") or "",
