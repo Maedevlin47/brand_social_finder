@@ -6,6 +6,14 @@ The brand name is provided as the argument to this command: $ARGUMENTS
 
 If no brand name is given, ask the user to provide one before proceeding.
 
+## Token efficiency rules
+
+Follow these rules on every run to keep token usage lean:
+
+- **Do not fetch pages directly.** Use only web search results (titles, snippets, URLs). Do not use WebFetch or load any URLs. Search snippet data is sufficient to identify handles.
+- **Stop searching once confident.** If the first search returns a clear, unambiguous handle, do not run additional searches for that platform.
+- **Do not reprocess already-found brands.** If a handle is already known from a previous result or the current conversation, skip re-researching it.
+
 ## Steps
 
 Work through these steps in order. Use web search for each one.

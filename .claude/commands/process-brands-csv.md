@@ -7,6 +7,14 @@ Process every brand in `to-process.csv` sequentially, writing results to `result
 
 An optional argument can override the input filename: $ARGUMENTS (if provided, treat it as the path to the input CSV instead of `to-process.csv`).
 
+## Token efficiency rules
+
+Follow these rules on every run to keep token usage lean:
+
+- **Do not fetch pages directly.** Use only web search results (titles, snippets, URLs). Do not use WebFetch or load any URLs. Search snippet data is sufficient to identify handles.
+- **Stop searching once confident.** If the first search returns a clear, unambiguous handle, do not run additional searches for that platform.
+- **Skip already-processed brands.** Before starting the loop, check `results.csv`. If a brand already has a row there, skip it entirely — do not re-research or re-append it.
+
 ## Setup steps (do these once before the loop)
 
 1. Read the input CSV. Count the total number of rows — you will need this for progress logging.
