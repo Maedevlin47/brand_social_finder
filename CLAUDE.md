@@ -25,37 +25,6 @@ Both commands are defined in `.claude/commands/` and use Claude Code's built-in 
 
 This is the **Claude Code-native** implementation. All web research must be performed using **Claude Code's built-in web search** — not the Anthropic API's `web_search` tool and not external HTTP calls. Do not add or use `BrandSearcher`, `anthropic` SDK calls, or any server-side agentic loop. Claude Code itself is the research agent.
 
-## Input format
+## Input / output format
 
-A CSV file with a header row and the following columns:
-
-| Column | Description |
-|--------|-------------|
-| `Name` | Brand name to look up |
-| `List` / `Source` / `Source List` | Name of the source list the brand came from (optional; column header is case-insensitive) |
-| `Location` | Country or region the brand is from |
-
-Example:
-```csv
-Name,List,Location
-Biti's,Vietnamese Footwear Brands,Vietnam
-Bata,Global Footwear,Czechia
-Muji,Japanese Retail Brands,Japan
-```
-
-## Output format
-
-A CSV file with the following columns:
-
-| Column | Description |
-|--------|-------------|
-| `brand_name` | Brand name (from input) |
-| `source_name` | Source list name (from input) |
-| `country` | Country/region (from input) |
-| `website` | Brand's official website URL |
-| `instagram_handle` | Official Instagram handle without `@`, or empty if not found |
-| `x_handle` | Official X handle without `@`, or empty if not found |
-| `manual_review` | `true` if the tool could not confidently choose a handle |
-| `confidence_score` | Integer 0–100 indicating confidence in the result |
-| `confidence_signals` | Semicolon-separated list of signals that contributed to the score |
-| `notes` | Where the handle was found and any relevant context or caveats |
+See README.md for column definitions and examples.

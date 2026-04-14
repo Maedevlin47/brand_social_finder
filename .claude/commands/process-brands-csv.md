@@ -34,46 +34,10 @@ Processing <N>/<total>: <Name> (<Location>)…
 where N is the 1-based index of the current row.
 
 ### Step 2 — Research the brand
-Use web search to find the official Instagram and X handles for this brand. Follow the same research logic as the `/find-brand-handle` command:
-
-**2a. Find the official website**
-Search: `"<Name>" official site <Location>`
-Identify the brand's official website URL. Check the website footer and about/contact pages for linked Instagram or X URLs. Any handle found here is highest priority.
-
-**2b. Find the Instagram handle**
-Search: `"<Name>" Instagram official`
-Also try: `site:instagram.com "<Name>"`
-Identify all candidate Instagram accounts. Note follower counts, verified badge, and whether bio links to the official website.
-
-**2c. Find the X handle**
-Search: `"<Name>" Twitter X official`
-Also try: `site:x.com "<Name>"`
-Identify all candidate X accounts. Note follower counts, verified badge, and whether bio links to the official website.
-
-**2d. Select the best handle for each platform**
-Priority order:
-1. Handle linked directly from the brand's official website
-2. Global handle preferred over a regional variant only when it is website-linked AND has a higher follower count — both conditions must be true
-3. Handle with the highest follower count among all candidates (global or regional)
-4. Other verification signals if follower counts are unavailable: bio links to the official website, cross-source confirmation, handle name match, verified badge
-5. If no handle can be found with reasonable confidence, use `-` for that field and flag for manual review
+Use web search to find the official Instagram and X handles for this brand. Follow the same research logic as the `/find-brand-handle` command, substituting `<Name>` and `<Location>` for the current row.
 
 ### Step 3 — Score confidence (0–100)
-Start at 0. Apply signals found during research, then cap between 0 and 100.
-
-Positive:
-- +50 handle linked directly from the brand's official website
-- +30 profile bio links back to the brand's official website
-- +25 handle confirmed across multiple independent sources (press, Wikipedia, directories)
-- +20 selected account has the highest follower count among multiple candidate accounts for this platform
-- +18 handle name is an exact or near-exact match to the brand name
-- +15 verified badge confirmed on the selected account
-
-Negative:
-- −15 multiple competing accounts with no clear winner
-- −10 handle found via web search only, not on official website
-- −10 follower count could not be verified
-- −5 selected account is a regional variant and a global account also exists
+Follow the same scoring rules as the `/find-brand-handle` command.
 
 Set `manual_review` to `true` if confidence is below 50 or if meaningful ambiguity remains.
 
